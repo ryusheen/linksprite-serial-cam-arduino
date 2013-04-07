@@ -11,6 +11,7 @@ const char GET_SIZE[5] = {0x56, 0x00, 0x34, 0x01, 0x00};
 const char RESET_CAMERA[4] = {0x56, 0x00, 0x26, 0x00};
 const char TAKE_PICTURE[5] = {0x56, 0x00, 0x36, 0x01, 0x00};
 const char STOP_TAKING_PICS[5] = {0x56, 0x00, 0x36, 0x01, 0x03};
+char POWER_SAVING[] = {0x56,0x00,0x3E,0x03,0x00,0x01,0x00};
 char CHANGE_BAUD_RATE[] = {0x56, 0x00, 0x24, 0x03, 0x01, 0x00, 0x00 };
 char CHANGE_PICT_SIZE[] = {0x56, 0x00, 0x54, 0x01, 0x00};
 char READ_DATA[8] = {0x56, 0x00, 0x32, 0x0C, 0x00, 0x0A, 0x00, 0x00};
@@ -24,6 +25,20 @@ void eat_response(Stream& c)
 
 JPEGCamera::JPEGCamera(Stream& comm) : cameraPort(comm)
 {
+}
+
+void JPEGCamera::powerSaving(bool on) // on = True -> enter power saving mode
+{
+  int i;
+
+  POWER_SAVING[6] = on?0x01:0x00;
+
+  for (i = 0;i<7;i++)
+    cameraPort.write(POWER_SAVING[i]);
+  delay(50);
+
+  for (int i=0;i<5;i++)
+    Serial.write(cameraPort.read());
 }
 
 //Get the size of the image currently stored in the camera
@@ -50,8 +65,6 @@ void JPEGCamera::chBaudRate(byte bd_rate)
 {
   char response[7];
 
-  reset();
-  delay(4000);  
   switch(bd_rate) {
   case 0: // 9600
     CHANGE_BAUD_RATE[5] = 0xAE;
@@ -74,12 +87,19 @@ void JPEGCamera::chBaudRate(byte bd_rate)
     CHANGE_BAUD_RATE[6] = 0xA6;
   }
 
-  sendCommand(CHANGE_BAUD_RATE, response, 7);
+  while (cameraPort.available()) cameraPort.read();
+
+  //Send each character in the command string to the camera through the camera serial port 
+  char * command = CHANGE_BAUD_RATE;
+  for(int i=0; i<7; i++){
+    cameraPort.write(*command++);
+  }
+  /*  sendCommand(CHANGE_BAUD_RATE, response, 7);
   for (int i = 0;i<7;i++) {
     Serial.print((byte)(response[i]),HEX);
     Serial.print(" ");
   }
-  delay(100);
+  delay(100);*/
 }
 
 void JPEGCamera::chPictureSize(byte size)
