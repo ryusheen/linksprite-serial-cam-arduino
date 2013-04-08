@@ -50,10 +50,10 @@ unsigned int JPEGCamera::getSize()
   //Send the GET_SIZE command string to the camera
   sendCommand(GET_SIZE, response, 5);
   
+  while(!cameraPort.available());
   //Read 4 characters from the camera and add them to the response string
   for(int i=0; i<4; i++)
     {
-      while(!cameraPort.available());
       response[i]=cameraPort.read();
     }
   //The size is in the last 2 characters of the response.
@@ -94,12 +94,8 @@ void JPEGCamera::chBaudRate(byte bd_rate)
   for(int i=0; i<7; i++){
     cameraPort.write(*command++);
   }
-  /*  sendCommand(CHANGE_BAUD_RATE, response, 7);
-  for (int i = 0;i<7;i++) {
-    Serial.print((byte)(response[i]),HEX);
-    Serial.print(" ");
-  }
-  delay(100);*/
+  while (!cameraPort.available());
+  for (int i = 0;i<5;i++) cameraPort.read();
 }
 
 void JPEGCamera::chPictureSize(byte size)
@@ -121,9 +117,6 @@ void JPEGCamera::chPictureSize(byte size)
   }
 
   sendCommand(CHANGE_PICT_SIZE, response, 5);
-  delay(25);
-  for (int i=0;i<5;i++) Serial.write(response[i]);
-  while (Serial.read()!='c');
 }
 
 //Reset the camera
@@ -131,9 +124,13 @@ void JPEGCamera::chPictureSize(byte size)
 
 void JPEGCamera::reset()
 {
-  sendCommand(RESET_CAMERA, NULL, 4);
-  // Eat the init string
-  eat_response(cameraPort);
+  const char * command = RESET_CAMERA;
+
+  for(int i=0;i<4;i++)
+    cameraPort.write(command[i]);
+  delay(25);
+  if (cameraPort.available())
+    eat_response(cameraPort);
 }
 
 //Take a new picture
@@ -186,7 +183,7 @@ int JPEGCamera::readData(Stream& output,unsigned long r_size)
     delay(25);
 
     //Discard the response header.
-    //while(!cameraPort.available());
+    while(!cameraPort.available());
     for(i=0; i<5; i++)
       cameraPort.read();
 
@@ -203,7 +200,6 @@ int JPEGCamera::readData(Stream& output,unsigned long r_size)
     for(j=0;j<5;j++) cameraPort.read();
 
     for (j=0;j<i;j++) output.write(buf[j]);
-    //while (Serial.read()!='c');
   }
 
   //Return the number of bytes
