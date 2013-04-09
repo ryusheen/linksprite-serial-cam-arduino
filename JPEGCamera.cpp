@@ -94,8 +94,7 @@ void JPEGCamera::chBaudRate(byte bd_rate)
   for(int i=0; i<7; i++){
     cameraPort.write(*command++);
   }
-  while (!cameraPort.available());
-  for (int i = 0;i<5;i++) cameraPort.read();
+  while (cameraPort.available()>0)  cameraPort.read();
 }
 
 void JPEGCamera::chPictureSize(byte size)
@@ -163,7 +162,6 @@ int JPEGCamera::readData(Stream& output,unsigned long r_size)
 
   //Flush out any data currently in the serial buffer
   while (cameraPort.available()) cameraPort.read();
-  
   while (flag!=3) {
     
     //Send the command to get JPEGCAM_READ_SIZE bytes of data from the current address
@@ -191,13 +189,14 @@ int JPEGCamera::readData(Stream& output,unsigned long r_size)
     i=0;
     for (i=0;(i<32) && (flag!=3);i++) {
       count ++;
+      while (!cameraPort.available());
       buf[i]=cameraPort.read();
       if (buf[i] == 0xFF) flag |= 1;
       else if ((buf[i] == 0xD9) && (flag == 1)) flag |= 2;
       else flag = 0;
     }
     // Discard the footer
-    for(j=0;j<5;j++) cameraPort.read();
+    while (cameraPort.available()>0) cameraPort.read();
 
     for (j=0;j<i;j++) output.write(buf[j]);
   }
@@ -221,12 +220,10 @@ int JPEGCamera::sendCommand(const char * command, char * response, int length)
 
   //Clear any data currently in the serial buffer
   while (cameraPort.available()) cameraPort.read();
-
   //Send each character in the command string to the camera through the camera serial port 
  for(i=0; i<length; i++){
     cameraPort.write(*command++);
   }
-
   //Get the response from the camera and add it to the response string.
   while(!cameraPort.available());
   for(i=0; i<length; i++)
@@ -235,7 +232,6 @@ int JPEGCamera::sendCommand(const char * command, char * response, int length)
       if (response!=NULL)
 	*response++ = next_byte;
     }
-  
   //return the number of characters in the response string
   return length;
 }
