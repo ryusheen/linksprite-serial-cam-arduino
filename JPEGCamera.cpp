@@ -150,10 +150,9 @@ void JPEGCamera::stopPictures()
 }
 
 //Get the picture from the camera
-//pre: r_size is the size of the picture in bytes
 //     output is the stream (can be Serial, SD or other) to write the picture to
-//Usage: camera.readData(comm, r_size);
-int JPEGCamera::readData(Stream& output,unsigned long r_size)
+//Usage: camera.readData(comm);
+int JPEGCamera::readData(Stream& output)
 {
   unsigned long count=0, address = 0;
   byte buf[32]; // Buffer to hold the current chunk of the picture

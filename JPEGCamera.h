@@ -29,7 +29,7 @@ class JPEGCamera
   void takePicture();
   void stopPictures();
   void powerSaving(bool); // true -> power saving , false = exit power saving
-  int readData(Stream& output,unsigned long r_size);
+  int readData(Stream& output);
   void chPictureSize(byte p_size); // 0 -> 160x120 / 1 -> 320x240 / 2-> 640x480
   void chBaudRate(byte rate); // 0 -> 9600 / 1 -> 19200 / 2 ->  38400 / 3 -> 57600 / 4 -> 115200
   
